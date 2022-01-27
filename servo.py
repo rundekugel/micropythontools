@@ -1,5 +1,4 @@
 """pwm for servo. by lifesim.de"""
-import board_nm3 as brd
 import machine
 
 __version__ = "0.1.0"
