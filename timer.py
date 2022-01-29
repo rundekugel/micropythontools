@@ -50,7 +50,7 @@ class Timer:
     
   def setcallback(self, cb, callbackparamtype=None, userinfo=None):
     self.cb = cb
-    if callbackparamtype:
+    if self.callbackparamtype:
       self.callbackparamtype = callbackparamtype
     self.cb_userinfo = userinfo
     
