@@ -18,9 +18,10 @@ class fskdecoder:
   short = None
   long = None
   output = 0
-  timeout = .5
+  timeout = 1.5
   cbHi = None
   cbLo = None
+  cbTimeout = None
   lastLevel = 0
   
   def __init__(self, pinNum):
@@ -49,19 +50,20 @@ class fskdecoder:
     t = time.time()
     d = t-self._lastChange
     if d > self.timeout: 
-      self.__lastChange = t
+      self._lastChange = t
+      if self.cbTimeout: self.cbTimeout()
       return
     self.middle += d
     self.samples += 1
     m = self.middle / self.samples
     if d >m : 
-      if 0==self.output and self.cbHi: cbHi()
+      if 0==self.output and self.cbHi: self.cbHi()
       self.output = 1
     if d <m : 
-       if self.output and  self.cbLo: cbLo()
+       if self.output and  self.cbLo: self.cbLo()
        self.output = 0
      
-    self.__lastChange = t
+    self._lastChange = t
     
     
 
@@ -71,12 +73,28 @@ def cbL():
   print("L")
 def cbH():
   print("H")
+def cbT():
+  print(";")
 
 if __name__ == "__main__":
   # test
   fd = fskdecoder(0)
   fd.cbLo, fd.cbHi = cbL, cbH
   t = timer.Timer(.01, cb1)
-  tend = time.time()+30
-  while tend < time.time():
-    pass
+  tend = time.time()+130
+  t.start()
+  d=[]
+  b=0
+  by=0
+  while tend > time.time():
+    print(fd.output)
+    time.sleep(1)
+    if fd.output:
+      by += 2**b
+    b+=1
+    if b==8:
+      d.append(hex(by))
+      b,by=0,0
+      print(d)
+  print("done.")
+  del(fd)
