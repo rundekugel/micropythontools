@@ -3,7 +3,7 @@
 
 import machine
 import time
-
+import timer
 
 class fskdecoder:
   f1 = None
@@ -23,15 +23,15 @@ class fskdecoder:
   cbLo = None
   lastLevel = 0
   
-  def __init__(self, pinnum):
-    self.pinnum = pinnum
+  def __init__(self, pinNum):
+    self.pinNum = pinNum
     t = time.time()
     self._lastFall, self._lastRise = t, t
-    self.__lastChange = t
+    self._lastChange = t
     # set irqs
     self.pin = machine.Pin(self.pinNum, machine.Pin.IN, machine.Pin.PULL_UP)
-    self.pin.irq(trigger=Pin.IRQ_FALLING, handler=self.onChange)
-    self.pin.irq(trigger=Pin.IRQ_RISING, handler=self.onChange)
+    self.pin.irq(trigger=machine.Pin.IRQ_FALLING, handler=self.onChange)
+    self.pin.irq(trigger=machine.Pin.IRQ_RISING, handler=self.onChange)
 
   def onRise(self):
     t = time.time()
@@ -45,9 +45,9 @@ class fskdecoder:
     self.middle += d
     self.samples += 1
   
-  def onChange(self):
+  def onChange(self, a=0):
     t = time.time()
-    d = t-self._lastChange()
+    d = t-self._lastChange
     if d > self.timeout: 
       self.__lastChange = t
       return
@@ -65,9 +65,18 @@ class fskdecoder:
     
     
 
+def cb1(p=None):
+  print('.')
+def cbL():
+  print("L")
+def cbH():
+  print("H")
+
 if __name__ == "__main__":
   # test
-  fd = fskdecoder(pin=0)
-    
-
-
+  fd = fskdecoder(0)
+  fd.cbLo, fd.cbHi = cbL, cbH
+  t = timer.Timer(.01, cb1)
+  tend = time.time()+30
+  while tend < time.time():
+    pass
