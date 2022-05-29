@@ -5,6 +5,9 @@ import machine
 import time
 import timer
 
+class globs:
+  verbosity=3
+
 class fskdecoder:
   f1 = None
   f2 = None
@@ -15,8 +18,8 @@ class fskdecoder:
   _lastChange = None
   samples = 0
   middle = 0
-  short = None
-  long = None
+  short, long = 0,0
+  shortD,longD=0,0
   output = 0
   timeout = 1.5
   cbHi = None
@@ -49,32 +52,50 @@ class fskdecoder:
   def onChange(self, a=0):
     t = time.time()
     d = t-self._lastChange
+    self.d=d
     if d > self.timeout: 
       self._lastChange = t
       if self.cbTimeout: self.cbTimeout()
+      self.output = '-'
       return
     self.middle += d
     self.samples += 1
     m = self.middle / self.samples
-    if d >m : 
+    if d >m :
+      self.long += 1; self.longD += d
       if 0==self.output and self.cbHi: self.cbHi()
       self.output = 1
-    if d <m : 
-       if self.output and  self.cbLo: self.cbLo()
-       self.output = 0
+    if d <m :
+      self.short += 1;
+      self.shortD += d
+      if self.output and  self.cbLo: self.cbLo()
+      self.output = 0
      
     self._lastChange = t
-    
-    
+  def proc(self):
+    d = time.time() - self._lastChange
+    self.d = d
+    if d > self.timeout:
+      self.output = '-'
+      return
+
+  def __str__(self):
+    r = {} ; wl =("output","d","middle","short","long","samples")
+    d=self.__dict__
+    for i in d:
+      if i in wl: r[i]=d[i]
+    return str(r)
+
+# Testing:
 
 def cb1(p=None):
-  print('.')
+  if globs.verbosity >1: print('.')
 def cbL():
-  print("L")
+  if globs.verbosity >3: print("L")
 def cbH():
-  print("H")
+  if globs.verbosity >3: print("H")
 def cbT():
-  print(";")
+  if globs.verbosity > 1: print(";")
 
 if __name__ == "__main__":
   # test
@@ -87,14 +108,18 @@ if __name__ == "__main__":
   b=0
   by=0
   while tend > time.time():
-    print(fd.output)
-    time.sleep(1)
+    fd.proc()
+    print(fd.output, end="")
+    time.sleep(1)  # todo: sync with fd
+    if fd.output =='-':
+      if b>0: b=0; print()
+      continue
     if fd.output:
       by += 2**b
     b+=1
-    if b==8:
+    if b>7:
       d.append(hex(by))
       b,by=0,0
-      print(d)
+      print(d,fd)
   print("done.")
   del(fd)
